@@ -1,0 +1,3 @@
+finished exercise 3 - basically create a matrix from minefield, then check all adjacent cells and if there is a mine, increase its counter by 1. Then turn the counter into a char again, and create a String from that Vec<char> and push it into the final result.
+When you are done iterating over the matrix, return the final result.
+note: exercise done by passing through command line an argument with the following pattern: --rows=4 --cols=5 -*-*---*----*-------`

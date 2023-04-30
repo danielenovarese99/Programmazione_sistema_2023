@@ -1,0 +1,1 @@
+C:\Users\hp\Desktop\MAGISTRALE\ -\ SECONDO\ SEMESTRE\PROGRAMMAZIONE\ DI\ SISTEMA\PROGRAMMAZIONE\programmazione_di_sistema\rust\esercizi_lezione\target\debug\esercizi_lezione.exe: C:\Users\hp\Desktop\MAGISTRALE\ -\ SECONDO\ SEMESTRE\PROGRAMMAZIONE\ DI\ SISTEMA\PROGRAMMAZIONE\programmazione_di_sistema\rust\esercizi_lezione\src\main.rs
