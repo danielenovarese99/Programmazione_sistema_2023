@@ -122,6 +122,21 @@ impl FileSystem{
         let split_path: Vec<&str> = path.split("/").collect();
         if split_path.len() == 1{
             println!("Split path length is 1 -- creating new directory");
+            /// FIRST CHECK CURRENT LOCATION IF ANY OF THE CHILDREN HAVE THE SAME NAME AS CURRENT NEW NAME
+
+           for i in 0..(*current_loc).children.len(){
+               match &mut (*current_loc).children[i]{
+                   Node::Dir(e) => {
+                       /// IF THERE IS ANY, PRINT "DIRECTORY ALREADY EXISTS FOR GIVEN NAME" AND RETURN
+                       if e.name == split_path[0]{
+                           println!("Error > Directory \"{}\" already exists.",split_path[0]);
+                           return false;
+                       }
+                   }
+                   _ => {}
+               }
+           }
+            /// IF NOT, CREATE NEW DIRECTORY
             let mut new_node: Node = Node::Dir(
                 Dir{
                     name: String::from(split_path[0].clone()),
@@ -130,40 +145,20 @@ impl FileSystem{
                 }
             );
             (*current_loc).children.push(new_node);
-            return false;
-        }
-        else if split_path.len() == 1{
-            if split_path[0] == (*current_loc).name{
-                (*current_loc).children.push(
-                    Node::Dir(Dir::new(&split_path[0],TIMESTAMP,vec![]))
-                )
-            }
+            return true;
         }
 
-        // if the current directory is the first part of the path, proceed downwards
-        if (*current_loc).name == split_path[0] {
-            for i in 0..(*current_loc).children.len(){
-                /// only check directories
-                /*
-                match (*current_loc).children[i]{
-                    Dir => {println!("It's a directory")},
-                    File => {println!("It's a file")},
-                }
-                 */
-                match &mut (*current_loc).children[i]{
-                    Node::File(e) => {},
-                    Node::Dir(e) => {
-                        let result = Self::mk_dir_r(split_path[1..].join("").as_str(),e);
+        /// CHECK BETWEEN THE CURRENT DIRECTORY CHILDREN IF THERE IS ANY DIRECTORY THAT MATCHES CURRENT PATH
+        for i in 0..(*current_loc).children.len(){
+            /// only check directories
+            match &mut (*current_loc).children[i]{
+                Node::Dir(e) => {
+                    if e.name == split_path[0]{
+                        let result = Self::mk_dir_r(split_path[1..].join("/").as_str(),e);
                         return result;
                     }
                 }
-                /*
-                if Node::Dir == (*current_loc).children[i] {
-                    if (*current_loc).children[i].name == split_path[1]{
-                        return mk_dir_r(&split_path[1..],&(*current_loc).children[i]); // Todo check here
-                    }
-                }
-                 */
+                _ => {}
             }
         }
 
@@ -174,20 +169,21 @@ impl FileSystem{
     pub fn mk_dir(&mut self,path: &str) -> bool {
         // create new directory in file system
 
-        //let new_path: Vec<String> = path.clone().split("/").collect();
         let new_path: Vec<&str> = path.split("/").collect();
 
 
+        // check if trying to create folder and not a file
         if new_path[new_path.len()-1].contains("."){
             println!("Invalid path");
             return false
         }
+        /// check if root is correct
         if new_path[0] != self.root.name{
             println!("Invalid file system name");
             return false;
         }
 
-        let result: bool = Self::mk_dir_r(new_path[1..].join("").as_str(),&mut self.root);
+        let result: bool = Self::mk_dir_r(new_path[1..].join("/").as_str(),&mut self.root);
         if result == true{
             return true;
         }
@@ -238,9 +234,9 @@ impl FileSystem{
 }
 fn main() {
     let mut my_fs: FileSystem = FileSystem::new("Daniele");
-    let my_result: bool = my_fs.mk_dir("Daniele/ciao");
-
-    println!("{}",my_result);
+    let my_result: bool = my_fs.mk_dir("Daniele/dir1");
+    let my_second_result : bool = my_fs.mk_dir("Daniele/dir1/dir1");
+    let test_this = my_fs.mk_dir("Daniele/ciao");
 
     println!("{:?}",my_fs.root);
 }
