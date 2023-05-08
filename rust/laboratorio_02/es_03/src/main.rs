@@ -1,13 +1,15 @@
+use std::fmt::{Debug, Formatter};
 use std::ops::Deref;
 use std::thread::current;
 use std::time::Instant;
 
-static TIMESTAMP:u64 = 0;
 
+static TIMESTAMP:u64 = 0;
+#[derive(Clone)]
 enum FileType {
     Text, Binary
 }
-#[derive(Copy, Clone)]
+#[derive(Clone)]
 struct File {
     name: String,
     content: Vec<u8>, // max 1000 bytes, rest of the file truncated
@@ -24,8 +26,14 @@ impl File{
         }
     }
 }
+impl Debug for File{
+    fn fmt(&self, f: &mut Formatter<'_>) -> std::fmt::Result {
+        println!("FILE : Name : {}, Creation_time: {}",self.name,self.creation_time);
+        Ok(())
+    }
+}
 
-#[derive(Copy, Clone)]
+#[derive(Clone)]
 struct Dir {
     name: String,
     creation_time: u64,
@@ -40,10 +48,35 @@ impl Dir{
         }
     }
 }
-#[derive(Copy, Clone)]
+impl Debug for Dir{
+    fn fmt(&self, f: &mut Formatter<'_>) -> std::fmt::Result {
+        print!("\nDIR : Name : {}, Creation time : {}, Children : [ ",self.name,self.creation_time);
+        for i in 0..self.children.len(){
+            println!("{:?} ",self.children[i]);
+        }
+        print!("]");
+
+        Ok(())
+    }
+}
+#[derive(Clone)]
 enum Node {
     File(File),
     Dir(Dir),
+}
+impl Debug for Node{
+    fn fmt(&self, f: &mut Formatter<'_>) -> std::fmt::Result {
+        match self{
+            Node::Dir(e) => {
+                println!("{:?}",e)
+            },
+            Node::File(e) => {
+                println!("{:?}",e)
+            }
+        }
+
+        Ok(())
+    }
 }
 struct FileSystem {
     root: Dir
@@ -76,55 +109,94 @@ impl FileSystem{
         /// TODO >> this needs to copy all files inside of folder, // RECURSIVELY //
     }
      */
-    pub fn mk_dir(&mut self,path: &str) -> Result<T, E>{
-        // create new directory in file system
 
-        let new_path: Vec<String> = path.clone().split("/").collect();
-        if new_path[new_path.len()-1].contains("."){
-            return Err("Cannot create a new directory - invalid name");
-        }
-
-        if mk_dir_r(path,&mut self.root) == true{
-            return Ok(());
-        }
-
-        Err("invalid path")
-
-    }
     fn mk_dir_r(path: &str,current_loc:&mut Dir) -> bool{
-        if path.is_empty(){
+        println!("{:?}",path);
+        /*
+        if path.len() == 0{
             return true;
         }
+         */
 
 
-        let split_path: Vec<String> = path.clone().split("/").collect();
-        if split_path.len() == 0{
+        let split_path: Vec<&str> = path.split("/").collect();
+        if split_path.len() == 1{
+            println!("Split path length is 1 -- creating new directory");
+            let mut new_node: Node = Node::Dir(
+                Dir{
+                    name: String::from(split_path[0].clone()),
+                    children: vec![],
+                    creation_time: TIMESTAMP,
+                }
+            );
+            (*current_loc).children.push(new_node);
             return false;
         }
         else if split_path.len() == 1{
-            if split_path[0] == (*current_loc).deref().name{
+            if split_path[0] == (*current_loc).name{
                 (*current_loc).children.push(
-                    Node::Dir(Dir::new(&split_path[0].as_str(),TIMESTAMP,vec![]))
+                    Node::Dir(Dir::new(&split_path[0],TIMESTAMP,vec![]))
                 )
             }
         }
 
         // if the current directory is the first part of the path, proceed downwards
         if (*current_loc).name == split_path[0] {
-            for i in 0..(*current_loc).deref().children.len(){
+            for i in 0..(*current_loc).children.len(){
                 /// only check directories
-                if Node::Dir == (*current_loc).children[i] {
-                    if (*current_loc).children[i].name == split_path[1]{
-                        return mk_dir_r(path: &split_path[1..],(*current_loc).children[i]); // Todo check here
+                /*
+                match (*current_loc).children[i]{
+                    Dir => {println!("It's a directory")},
+                    File => {println!("It's a file")},
+                }
+                 */
+                match &mut (*current_loc).children[i]{
+                    Node::File(e) => {},
+                    Node::Dir(e) => {
+                        let result = Self::mk_dir_r(split_path[1..].join("").as_str(),e);
+                        return result;
                     }
                 }
+                /*
+                if Node::Dir == (*current_loc).children[i] {
+                    if (*current_loc).children[i].name == split_path[1]{
+                        return mk_dir_r(&split_path[1..],&(*current_loc).children[i]); // Todo check here
+                    }
+                }
+                 */
             }
         }
 
-
-
+        println!("Returning false at end of recursive call");
         false
     }
+
+    pub fn mk_dir(&mut self,path: &str) -> bool {
+        // create new directory in file system
+
+        //let new_path: Vec<String> = path.clone().split("/").collect();
+        let new_path: Vec<&str> = path.split("/").collect();
+
+
+        if new_path[new_path.len()-1].contains("."){
+            println!("Invalid path");
+            return false
+        }
+        if new_path[0] != self.root.name{
+            println!("Invalid file system name");
+            return false;
+        }
+
+        let result: bool = Self::mk_dir_r(new_path[1..].join("").as_str(),&mut self.root);
+        if result == true{
+            return true;
+        }
+
+        println!("Returning false as nothing was matched in recursive call");
+        false
+
+    }
+
 
     /*
     fn rm_dir(&mut self,path: &str) -> Result<()>{
@@ -165,5 +237,10 @@ impl FileSystem{
      */
 }
 fn main() {
-    println!("Hello, world!");
+    let mut my_fs: FileSystem = FileSystem::new("Daniele");
+    let my_result: bool = my_fs.mk_dir("Daniele/ciao");
+
+    println!("{}",my_result);
+
+    println!("{:?}",my_fs.root);
 }
