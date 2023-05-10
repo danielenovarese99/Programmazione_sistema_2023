@@ -1,5 +1,7 @@
+extern crate core;
 use std::fmt::{Debug, Formatter};
 use std::ops::Deref;
+use std::str::FromStr;
 use std::thread::current;
 use std::time::Instant;
 
@@ -26,6 +28,7 @@ impl File{
         }
     }
 
+
     fn from(f: &File) -> Self{
         File{
             name: f.name.clone(),
@@ -38,6 +41,37 @@ impl File{
 impl Debug for File{
     fn fmt(&self, f: &mut Formatter<'_>) -> std::fmt::Result {
         println!("FILE : Name : {}, Creation_time: {}",self.name,self.creation_time);
+        Ok(())
+    }
+}
+struct Query{
+    name: Vec<String>,
+    content: Vec<String>,
+    larger: Vec<u64>,
+    smaller: Vec<u64>,
+    newer: Vec<u64>,
+    older: Vec<u64>,
+}
+impl Debug for Query{
+    fn fmt(&self, f: &mut Formatter<'_>) -> std::fmt::Result {
+        print!("Name queries: [");
+        for i in 0..self.name.len(){print!("{} - ",self.name[i])};
+        println!(" ]");
+        print!("Content queries: [");
+        for i in 0..self.content.len(){print!("{} - ",self.content[i])};
+        println!(" ]");
+        print!("Larger queries: [");
+        for i in 0..self.larger.len(){print!("{} - ",self.larger[i])};
+        println!(" ]");
+        print!("Smaller queries: [");
+        for i in 0..self.smaller.len(){print!("{} - ",self.smaller[i])};
+        println!(" ]");
+        print!("Newer queries: [");
+        for i in 0..self.newer.len(){print!("{} - ",self.newer[i])};
+        println!(" ]");
+        print!("Older queries: [");
+        for i in 0..self.older.len(){print!("{} - ",self.older[i])};
+        println!(" ]");
         Ok(())
     }
 }
@@ -102,6 +136,18 @@ impl Node{
             Node::File(E) => {&E.name},
         }
     }
+    fn content(&self) -> Option<&Vec<u8>>{
+        match self{
+            Node::File(E) => {Some(&E.content)}
+            Node::Dir(E) => None
+        }
+    }
+    fn creation_time(&self) -> &u64{
+        match self{
+            Node::File(E) => {&E.creation_time}
+            Node::Dir(E) => {&E.creation_time}
+        }
+    }
 
     fn get_mut_file(node: &mut Node) -> Option<&mut File>{
         match node{
@@ -109,13 +155,26 @@ impl Node{
             Node::File(E) => Some(E),
         }
     }
-
-    fn get_mut_dir(node : &mut Node) -> Option<&mut Dir>{
+    fn get_mut_dir(node: &mut Node) -> Option<&mut Dir>{
         match node{
             Node::Dir(E) => Some(E),
             Node::File(E) => None,
         }
     }
+    fn get_file(node: &Node) -> Option<&File>{
+        match node{
+            Node::Dir(E) => None,
+            Node::File(E) => Some(&E)
+        }
+    }
+
+    fn get_dir(node: &Node) -> Option<&Dir>{
+        match node{
+            Node::File(E) => None,
+            Node::Dir(E) => Some(&E)
+        }
+    }
+
 }
 impl Debug for Node{
     fn fmt(&self, f: &mut Formatter<'_>) -> std::fmt::Result {
@@ -462,10 +521,123 @@ impl FileSystem{
 
     }
 
-
-    fn search(&mut self,queries: &[&str]) -> Option<MatchResult>{
+    /*
+    fn search_r<'a>(current_loc: &'a mut Dir, final_result: &'a mut MatchResult<'a>, queries : &Query){
+        /// TODO > finish implementation
+        /// remember - only check for files...
+        for child in current_loc.children.iter_mut(){
+            if child.is_dir(){ /// DIRECTORY >> SEARCH IN DEPTH INSIDE THAT DIRECTORY
+                Self::search_r(Node::get_mut_dir(child).unwrap(),final_result, queries);
+            }
+            else{
+                /// we have a file
+                /// iter through entire query - if any of them match, add it to the current final option
+                // names
+                for i in 0..queries.name.len(){
+                    if child.name().as_str() == queries.name[i].as_str(){
+                        final_result.nodes.push(child);
+                        println!("Found a file matching with a name query");
+                        break;
+                    }
+                }
+            }
+        }
+        /*
+        if current_loc.children[i].is_dir() == false && Node::get_mut_file(&mut current_loc.children[i]).unwrap().name == path{
+                    return Node::get_mut_file(&mut current_loc.children[i])
+                }
+         */
+    }
+     */
+    pub fn search<'a>(&mut self,queries: &[&'a str]){
         // cerca dei file che matchano le query indicate e restituisce un oggetto MATCHRESULT
         // con un riferimento mutabile ai file trovati
+
+        /// create function for recursive file search that takes in input a parameter (search parameter, match while looking through items)
+        /// return Option <&mut Node>
+        /// same layout as get function, but instead of using get_mut_file, just return Some<&mut current_loc.children[i]>
+
+        // i have multiple queries - if one matches a file, that file is retrieved
+
+        // you don't have the problem of trying to retrieve multiple times the same file, as there is only one iteration over the items.
+
+        let mut final_result  = MatchResult{
+            queries: vec![],
+            nodes: vec![],
+        };
+        for i in 0..queries.len(){
+            final_result.queries.push(queries[i].clone());
+        }
+
+        let mut myquery: Query = Query{
+            name: vec![],
+            content: vec![],
+            larger: vec![],
+            smaller: vec![],
+            newer: vec![],
+            older: vec![],
+        };
+
+        /// handle all inserted queries, then insert them in a proper struct
+        for i in 0..queries.len(){
+            let temp: Vec<&str> = queries[i].split(":").collect();
+            match temp[0]{
+                "name" => {myquery.name.push(String::from(temp[1].clone()))}
+                "content" => {myquery.content.push(String::from(temp[1].clone()))}
+                "larger" => {myquery.larger.push(u64::from_str(temp[1].clone()).unwrap())}
+                "smaller" => {myquery.smaller.push(u64::from_str(temp[1].clone()).unwrap())}
+                "newer"=> {myquery.newer.push(u64::from_str(temp[1].clone()).unwrap())}
+                "older"=> {myquery.older.push(u64::from_str(temp[1].clone()).unwrap())}
+                _ => {println!("Invalid query found : {} : {}",temp[0],temp[1])}
+            }
+            // then add said query to the final result (MatchResult option)
+            //let rejoined_str: &str = temp.join(":").as_str();
+        }
+
+
+        println!("{:?}",myquery);
+        //Self::search_r(&mut self.root,&mut final_result,&myquery);
+
+        let mut directories_to_visit = vec![&mut self.root];
+        while directories_to_visit.len() > 0{
+            let mut found_file = false;
+            let mut current_dir = directories_to_visit.remove(0);
+
+            for i in 0..myquery.name.len(){
+                for x in 0..current_dir.children.len(){
+                    if !current_dir.children[x].is_dir() && current_dir.children[x].name().eq(&myquery.name[i]){
+                        println!("Found file matching name");
+                    }
+                    else if current_dir.children[i].is_dir(){
+                        directories_to_visit.push(Node::get_mut_dir(&mut current_dir.children[x]).unwrap())
+                    }
+                }
+            }
+        }
+/*
+
+        if final_result.nodes.len() > 0{
+            return Some(&mut final_result);
+        }
+        None
+
+ */
+
+
+        // now iterate over all the children and add items if a file matching the input is found
+
+
+
+
+        /*
+        for i in 0..queries.len(){
+            // let result = search_function_param(...)
+            // if result.is_some() {
+            //      final_result.queries.push(queries[i].clone());
+            //      fina_result.nodes.push(result.unwrap());
+            // }
+        }
+         */
 
         /*
         TYPES OF QUERIES
@@ -476,6 +648,7 @@ impl FileSystem{
         "newer: val" >> find files created before val
         "older: val" >> find files created after val
          */
+       // return None
     }
 }
 fn main() {
@@ -512,4 +685,6 @@ fn main() {
     }else{
         println!("Found nothing");
     }
+    let test_queries: [&str;5] = ["name:ciao","name:test","content:saluto a mamma","newer:1","older:2"];
+    my_fs.search(&test_queries);
 }
