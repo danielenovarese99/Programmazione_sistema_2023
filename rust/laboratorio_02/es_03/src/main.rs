@@ -462,7 +462,7 @@ impl FileSystem{
 
     }
 
-    /*
+
     fn search(&mut self,queries: &[&str]) -> Option<MatchResult>{
         // cerca dei file che matchano le query indicate e restituisce un oggetto MATCHRESULT
         // con un riferimento mutabile ai file trovati
@@ -477,7 +477,6 @@ impl FileSystem{
         "older: val" >> find files created after val
          */
     }
-     */
 }
 fn main() {
     let mut my_fs: FileSystem = FileSystem::new("Daniele");
