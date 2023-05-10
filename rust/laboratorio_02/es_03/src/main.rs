@@ -25,6 +25,15 @@ impl File{
             type_,
         }
     }
+
+    fn from(f: &File) -> Self{
+        File{
+            name: f.name.clone(),
+            creation_time: f.creation_time.clone(),
+            content: f.content.clone(),
+            type_: f.type_.clone()
+        }
+    }
 }
 impl Debug for File{
     fn fmt(&self, f: &mut Formatter<'_>) -> std::fmt::Result {
@@ -47,6 +56,13 @@ impl Dir{
             children,
         }
     }
+    fn from(d: &Dir) -> Self{
+        Dir{
+            name: d.name.clone(),
+            creation_time: d.creation_time.clone(),
+            children: d.children.clone(),
+        }
+    }
 }
 impl Debug for Dir{
     fn fmt(&self, f: &mut Formatter<'_>) -> std::fmt::Result {
@@ -59,10 +75,47 @@ impl Debug for Dir{
         Ok(())
     }
 }
-#[derive(Clone)]
 enum Node {
     File(File),
     Dir(Dir),
+}
+
+impl Clone for Node {
+    fn clone(&self) -> Self {
+        match self {
+            Node::File(f) => {Node::File(File::from(f))}
+            Node::Dir(d) => {Node::Dir(Dir::from(d))}
+        }
+    }
+}
+impl Node{
+    fn is_dir(&self) -> bool{
+        match self {
+            Node::File(e) => {false},
+            Node::Dir(e) => {true},
+        }
+    }
+
+    fn name(&self) -> &String{
+        match self{
+            Node::Dir(E) => {&E.name},
+            Node::File(E) => {&E.name},
+        }
+    }
+
+    fn get_mut_file(node: &mut Node) -> Option<&mut File>{
+        match node{
+            Node::Dir(E) => None,
+            Node::File(E) => Some(E),
+        }
+    }
+
+    fn get_mut_dir(node : &mut Node) -> Option<&mut Dir>{
+        match node{
+            Node::Dir(E) => Some(E),
+            Node::File(E) => None,
+        }
+    }
 }
 impl Debug for Node{
     fn fmt(&self, f: &mut Formatter<'_>) -> std::fmt::Result {
@@ -350,58 +403,62 @@ impl FileSystem{
         return;
     }
 
-    fn get_file_r<'a>(path: &str, current_loc : &mut Dir, final_reference: &mut Option<&'a mut File>){
-        let split_path: Vec<&str> = path.split("/").collect();
+    /// GET FILE
+    /*
+    What was the problem?
+    The problem was that, by using a match() construct, i was assigning a mutable address to current_loc.children[] -> doing so was
+    not making me able to return the actual return value of the function, which was a mutable address to a file - which was inevitably
+    contained inside of &mut current_loc.children[]
 
-        /// CHECK BETWEEN THE CURRENT DIRECTORY CHILDREN IF THERE IS ANY DIRECTORY THAT MATCHES CURRENT PATH
-        for i in 0..(*current_loc).children.len(){
-            /// only check directories
-            match &mut (*current_loc).children[i]{
-                /// check between current child directories
-                Node::Dir(e) => {
-                    if e.name == split_path[0] && split_path.len() == 2{
-                        /// if you only have the file remaining in the path, check between the current directory's children and remove that file
-                        for x in 0..e.children.len(){
-                            match &mut e.children[x]{
-                                Node::File(e_1) => {
-                                    if (*e_1).name == split_path[1]{
-                                        // same as for removing a file, but save the current content of the reference with the address of the found file
-                                        (*final_reference) = Some(e_1);
-                                        return;
-                                    }
-                                }
-                                _ => {}
-                            }
-                        }
-                    }
-                    else if e.name == split_path[0]{
-                        Self::get_file_r(split_path[1..].join("/").as_str(),e,final_reference);
-                    }
+    How did i get around this?
+    Making the match() actually a function that returns either a bool or a &mut File / Dir, always releasing the mut
+    and not leaving it inside of the current scope.
+     */
+    fn get_file_r<'a>(path: &str, current_loc : &'a mut Dir) -> Option<&'a mut File>{
+        if path.contains("/"){
+            let split_path: Vec<&str> = path.split("/").collect();
+
+            /// CHECK BETWEEN THE CURRENT DIRECTORY CHILDREN IF THERE IS ANY DIRECTORY THAT MATCHES CURRENT PATH
+            for i in 0..current_loc.children.len(){
+                /// only check directories
+                if current_loc.children[i].is_dir() && current_loc.children[i].name().eq(split_path[0]){
+                    println!("Going down path... => {}",split_path[0]);
+                    let new_path = split_path[i..].join("/");
+                    return Self::get_file_r(new_path.as_str(),Node::get_mut_dir(&mut current_loc.children[i]).unwrap());
                 }
-                _ => {}
             }
         }
-
-        //println!("Returning false at end of recursive call");
-        return;
+        else{
+            for i in 0..current_loc.children.len(){
+                if current_loc.children[i].is_dir() == false && Node::get_mut_file(&mut current_loc.children[i]).unwrap().name == path{
+                    return Node::get_mut_file(&mut current_loc.children[i])
+                }
+            }
+        }
+        // nothing found
+        return None
     }
     pub fn get_file(&mut self,path: &str,) -> Option<&mut File>{
         // retrieve file from file system
-        // same implementation as remove file, but return a
+        // same implementation as remove file, but return a &mut File
         let new_path: Vec<&str> = path.split("/").collect();
         println!("{:?}",new_path);
-        let mut reference_to_file: Option<&mut File> = None;
+
 
 
         if new_path[0] != self.root.name || new_path.len() <= 1{
             println!("Invalid path");
-            return reference_to_file;
+            return None;
         }
 
 
+        let path_f = new_path[1..].join("/");
+        let result = Self::get_file_r(path_f.as_str(),&mut self.root);
 
-        Self::get_file_r(new_path[1..].join("/").as_str(),&mut self.root,&mut reference_to_file);
-        return reference_to_file
+        if result.is_some(){
+            return result;
+        }
+        return None
 
     }
 
@@ -449,5 +506,11 @@ fn main() {
     println!("{:?}",my_fs.root);
     */
 
+    let result = my_fs.get_file("Daniele/ciao/ciao.txt");
 
+    if result.is_some(){
+        println!("Found something >> {}",result.unwrap().name);
+    }else{
+        println!("Found nothing");
+    }
 }
