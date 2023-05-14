@@ -1,36 +1,32 @@
 use std::ops::Deref;
+use std::cell::Cell;
+use std::cell::RefCell;
+use std::rc;
 
-struct Samplestruct {
-    values: Vec<i32>,
+
+struct Person {
+    name : String,
+    age: RefCell<i32>,
 }
-impl Samplestruct{
-    fn new() -> Samplestruct{
-        Samplestruct{
-            values: vec![]
-        }
+
+impl Person{
+    fn print_age(&self){
+        let mut x = self.age.borrow_mut();
+        println!("My name is {} and i'm {} years old. Yay!", self.name,x);
     }
 
-    fn print_values(&self) -> (){
-        for i in 0..(*self).values.len(){
-            println!("{}",(*self).values[i]);
-        }
-    }
-    fn add_values(&mut self,newvalue : i32){
-        (*self).values.push(newvalue);
+    fn birthday(&self){
+        println!("Today is my birthday! +1 up");
+        let mut x = self.age.borrow_mut();
+        *x += 1;
     }
 }
-fn test_add(teststruct : &mut Samplestruct){
-    (*teststruct).add_values(64);
-}
+
 fn main() {
-    let mut s1 = Samplestruct::new();
-    let test = &mut s1;
-    (*test).values.push(1);
-    s1.print_values();
-
-    test_add(&mut s1);
-    s1.print_values();
-
+    let mut daniele = Person{
+        name : String::from("Daniele"),
+        age : 23,
+    };
 
 
 }
