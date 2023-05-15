@@ -1,5 +1,6 @@
 use std::io::{Read, Write};
-
+use std::mem;
+use std::mem::take;
 /// buffer circolare
 ///
 struct CircularBuffer<T>{
@@ -49,7 +50,7 @@ impl<T> CircularBuffer<T>{
         }
     }
 
-    fn removeItem(&mut self)->Option<T>{
+    fn remove_item(&mut self)->Option<T>{
         // to remove an item, first retrieve the item at position read_index.
         // since it's an option, first check if it's an error - if it is, then simply keep trying to retrieve items until
         // a valid one is found or write_index is reached.
@@ -70,18 +71,21 @@ impl<T> CircularBuffer<T>{
             self.read_index += 1;
         }
 
-        self.buffer.remove(x as usize)
+        mem::take(&mut self.buffer[x as usize])
     }
 
 }
 
 fn main() {
+    /// the problem in this exercise is that when you remove an element from a vector, the vector is reallocated with size-1 -
+    /// we have to implement a way of removing items from this vector, and assigning a default value after removing them.
+
     println!("Hello, world!");
-    let mut my_buffer: CircularBuffer<i32>= CircularBuffer::new(10);
-    my_buffer.insertItem(1);
-    my_buffer.insertItem(2);
-    my_buffer.insertItem(3);
-    let first_item = my_buffer.removeItem();
+    let mut my_buffer: CircularBuffer<String>= CircularBuffer::new(10);
+    my_buffer.insertItem(String::from("ciao"));
+    my_buffer.insertItem(String::from("sono"));
+    my_buffer.insertItem(String::from("daniele"));
+    let first_item = my_buffer.remove_item();
     if first_item.is_some(){
         println!("{}",first_item.unwrap());
     }
@@ -93,5 +97,3 @@ fn main() {
 
 }
 
-/// the problem in this exercise is that when you remove an element from a vector, the vector is reallocated with size-1 -
-/// we have to implement a way of removing items from this vector, and assigning a default value after removing them.
