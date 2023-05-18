@@ -1,7 +1,20 @@
+/*
 enum I<'a>{
     Int(&'a dyn Iterator<Item=(i32)>),
     Str(&'a dyn Iterator<Item=(String)>),
     StaticStr(&'a dyn Iterator<Item=(&'a str)>),
+}
+
+enum I{
+    MyCycleItem(MyCycle<T>),
+    GenericItem(T),
+}
+
+ */
+
+enum PossibleIterators<I> {
+    Cycle(MyCycle<I>),
+    NormalIter(I),
 }
 struct MyCycle<I: Clone+Iterator>{
     iter: I,
@@ -9,15 +22,23 @@ struct MyCycle<I: Clone+Iterator>{
     repeat: usize,
     current_repeat: usize,
 }
+
+struct Cycle<I: Clone + Iterator>{
+    iter: I,
+    iter_clone: I,
+    repeat: usize,
+    current_repeat: usize,
+}
 /// I is an iterator >> you can't return Option<I> but you have to return something of type contained inside of I
 impl <I> MyCycle<I> where I: Clone + Iterator{
-    fn new(iter: I, repeat: usize) -> Self{
-        let iter_clone = iter.clone();
+
+    fn new(item: I, repeat: usize) -> Self{
+        let iter_clone = item.clone();
         MyCycle{
-            iter,
+            iter: item,
             iter_clone,
             repeat,
-            current_repeat : 0,
+            current_repeat: 0
         }
     }
 
@@ -61,10 +82,23 @@ fn main() {
     println!("{:?}",c.next());
     println!("{:?}",c.next());
 
+    /// TESTING REPEAT
     let mut test_mycycle = MyCycle::new(0..2, 0);
     println!("{:?}, repeat = {:?}",test_mycycle.next(),test_mycycle.current_repeat);
     println!("{:?}, repeat = {:?}",test_mycycle.next(),test_mycycle.current_repeat);
     println!("{:?}, repeat = {:?}",test_mycycle.next(),test_mycycle.current_repeat);
 
+    /// TESTING EMPTY
+    let empty_iter: Vec<i32> = Vec::new();
+    let mut empty_iter2 = empty_iter.iter();
+    let mut test_empty_mycycle = MyCycle::new(empty_iter2,0);
 
+    println!("{:?}, repeat = {:?}",test_empty_mycycle.next(),test_mycycle.current_repeat);
+
+
+   /*
+    /// TESTING MYCYCLE MOLTIPLICATION
+    //let mut c = MyCycle::new(MyCycle::new(0..2, 2), 3);
+    println!("Total repetions : {:?} > should be 25",c.repeat);
+    */
 }
