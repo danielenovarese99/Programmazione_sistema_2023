@@ -13,20 +13,20 @@ fn multiply(items: &[i32]) -> i32{
 
 
 struct ComputeCell<'a,T> {
-    val: i32,
+    val: T,
     deps: Vec<i32>,
-    fun: Box<dyn 'a + Fn(&[i32]) -> i32>,
+    fun: Box<dyn 'a + Fn(&[T]) -> T>,
     callbacks: HashMap<T, Box<dyn FnMut(T)>>
 }
 #[derive(Default)]
-pub struct Reactor<'a> {
-    input_cells: Vec<i32>,
-    compute_cells: Vec<ComputeCell<'a,i32>>,
-    compute_cell_ids: Vec<i32>,
+pub struct Reactor<'a,T> {
+    input_cells: Vec<T>,
+    compute_cells: Vec<ComputeCell<'a,T>>,
+    compute_cell_ids: Vec<usize>,
 }
 
 
-impl<'a> Reactor<'a>{
+impl<'a,T: Copy + PartialEq + Default> Reactor<'a,T>{
     pub fn new() -> Self{
         Reactor::default()
     }
@@ -38,7 +38,7 @@ impl<'a> Reactor<'a>{
 
 
     // add input cell
-    pub fn add_input_cell(&mut self,value: i32)->usize{
+    pub fn add_input_cell(&mut self,value: T)->usize{
         let return_val = self.input_cells.len();
         self.input_cells.push(value);
         // update all dependencies
@@ -47,16 +47,16 @@ impl<'a> Reactor<'a>{
 
 
     // add compute cell
-    pub fn add_compute_cell<F: 'a + Fn(&[i32])->i32>(&mut self,dependencies: Vec<i32>,compute_function: F)->usize{
+    pub fn add_compute_cell<F: 'a + Fn(&[T])->T>(&mut self,dependencies: Vec<i32>,compute_function: F)->usize{
         let return_val = self.compute_cells.len();
         let mut new_compute_cell = ComputeCell{
-            val: 0,
+            val: T::default(),
             deps: dependencies.clone(),
             fun: Box::new(compute_function),
             callbacks: HashMap::new(),
         };
 
-        self.compute_cell_ids.push(return_val as i32);
+        self.compute_cell_ids.push(return_val);
         self.compute_cells.push(new_compute_cell);
 
         self.update_cells();
@@ -77,7 +77,7 @@ impl<'a> Reactor<'a>{
     }
 
     // set new value
-    pub fn update_value(&mut self,index_input_cell: usize,new_val:i32)->bool{
+    pub fn update_value(&mut self,index_input_cell: usize,new_val:T)->bool{
         // check if index is right
         if index_input_cell >= self.input_cells.len(){
             return false;
@@ -101,7 +101,7 @@ impl<'a> Reactor<'a>{
             // get dependencies, get values from input cells, apply compute_cell function to values
             let dependencies = self.compute_cells[*i as usize].deps.clone();
             let values = self.get_values(dependencies).unwrap();
-            let new_value:i32 = (self.compute_cells[*i as usize].fun)(&*values);
+            let new_value:T = (self.compute_cells[*i as usize].fun)(&*values);
             if new_value != self.compute_cells[*i as usize].val{
                 self.compute_cells[*i as usize].val = new_value;
             }
@@ -115,7 +115,7 @@ impl<'a> Reactor<'a>{
 
 
 
-    pub fn get_value(&self,input_cell_id: usize) -> Option<i32>{
+    pub fn get_value(&self,input_cell_id: usize) -> Option<T>{
         if input_cell_id < self.input_cells.len(){
             return self.input_cells.get(input_cell_id).map(|x| *x)
         }else{
@@ -123,7 +123,7 @@ impl<'a> Reactor<'a>{
         }
     }
 
-    pub fn get_values(&self,input_cell_ids: Vec<i32>)->Result<Vec<i32>,i32>{
+    pub fn get_values(&self,input_cell_ids: Vec<i32>)->Result<Vec<T>,i32>{
         input_cell_ids.iter()
             .map(|id| self.get_value(*id as usize).ok_or(-1)) // if can't retrieve value of said cell, return the id that is causing an error
             .collect()
@@ -141,8 +141,6 @@ fn main() {
 
     println!("Input cell 1 > {}",my_reactor.input_cells[0]);
     println!("Input cell 2 > {}",my_reactor.input_cells[1]);
-
-
 
     let compute1 = my_reactor.add_compute_cell(vec![0,1],&add);
     let compute2 = my_reactor.add_compute_cell(vec![0,1],&multiply);
