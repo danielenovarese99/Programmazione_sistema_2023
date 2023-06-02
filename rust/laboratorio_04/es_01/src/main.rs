@@ -14,28 +14,72 @@ pub fn permutazioni_semplici(pos: i32, val: Vec<i32>, mut sol: Vec<String>, mut 
                 mark[i] = 1;
                 sol.push("+".parse().unwrap());
                 sol.push(val[i].to_string());
-                permutazioni_semplici(pos+1,val.clone(),sol.clone(),mark.clone(),count+val[i]);
+                //permutazioni_semplici(pos+1,val.clone(),sol.clone(),mark.clone(),count+val[i]);
+                if i % 2 == 0{
+                    let mut mark_clone = mark.clone();
+                    let mut sol_clone = sol.clone();
+                    let val_clone = val.clone();
+                    let new_count = count + val[i];
+                    let thread_even = thread::spawn(move|| permutazioni_semplici(pos+1,val_clone,sol_clone,mark_clone,new_count));
+                    thread_even.join().unwrap();
+                }
+                else{
+                    permutazioni_semplici(pos+1,val.clone(),sol.clone(),mark.clone(),count+val[i]);
+                }
                 mark[i] = 0;
             }
             else if count - val[i] <= 10{
                 mark[i] = 1;
                 sol.push("-".parse().unwrap());
                 sol.push(val[i].to_string());
-                permutazioni_semplici(pos+1,val.clone(),sol.clone(),mark.clone(),count-val[i]);
+                //permutazioni_semplici(pos+1,val.clone(),sol.clone(),mark.clone(),count-val[i]);
+                if i % 2 == 0{
+                    let mut mark_clone = mark.clone();
+                    let mut sol_clone = sol.clone();
+                    let val_clone = val.clone();
+                    let new_count = count - val[i];
+                    let thread_even = thread::spawn(move|| permutazioni_semplici(pos+1,val_clone,sol_clone,mark_clone,new_count));
+                    thread_even.join().unwrap();
+                }
+                else{
+                    permutazioni_semplici(pos+1,val.clone(),sol.clone(),mark.clone(),count+val[i]);
+                }
                 mark[i] = 0;
             }
             else if count * val[i] <= 10{
                 mark[i] = 1;
                 sol.push("*".parse().unwrap());
                 sol.push(val[i].to_string());
-                permutazioni_semplici(pos+1,val.clone(),sol.clone(),mark.clone(),count*val[i]);
+                //permutazioni_semplici(pos+1,val.clone(),sol.clone(),mark.clone(),count*val[i]);
+                if i % 2 == 0{
+                    let mut mark_clone = mark.clone();
+                    let mut sol_clone = sol.clone();
+                    let val_clone = val.clone();
+                    let new_count = count * val[i];
+                    let thread_even = thread::spawn(move|| permutazioni_semplici(pos+1,val_clone,sol_clone,mark_clone,new_count));
+                    thread_even.join().unwrap();
+                }
+                else{
+                    permutazioni_semplici(pos+1,val.clone(),sol.clone(),mark.clone(),count+val[i]);
+                }
                 mark[i] = 0;
             }
             else if count / val[i] <= 10{
                 mark[i] = 1;
                 sol.push("/".parse().unwrap());
                 sol.push(val[i].to_string());
-                permutazioni_semplici(pos+1,val.clone(),sol.clone(),mark.clone(),count/val[i]);
+                //permutazioni_semplici(pos+1,val.clone(),sol.clone(),mark.clone(),count/val[i]);
+                if i % 2 == 0{
+                    let mut mark_clone = mark.clone();
+                    let mut sol_clone = sol.clone();
+                    let val_clone = val.clone();
+                    let new_count = count / val[i];
+                    let thread_even = thread::spawn(move|| permutazioni_semplici(pos+1,val_clone,sol_clone,mark_clone,new_count));
+                    thread_even.join().unwrap();
+                }
+                else{
+                    permutazioni_semplici(pos+1,val.clone(),sol.clone(),mark.clone(),count+val[i]);
+                }
                 mark[i] = 0;
             }
         }
