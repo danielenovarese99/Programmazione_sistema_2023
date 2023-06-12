@@ -1,0 +1,27 @@
+sample shit
+
+
+let mut search_path: Vec<&str> = path.split("/").collect();
+
+        /// check if trying to create a directory and not a file
+        if search_path[search_path.len()-1].contains("."){
+            return Err("invalid path - must create directory, not file");
+        }
+
+        /// traverse all file system directories, look for the ones with the same name
+        for i in 0..search_path.len(){
+            // traverse through filesystem
+            let fs_files: &Vec<Node> = &self.root.children;
+            for x in 0..fs_files.deref().len(){
+
+
+                if Node::Dir == fs_files.deref()[x]{ // if it's a directory
+
+                }else{  // can't create a directory inside of a file
+                    if fs_files.deref()[x].name == search_path[i]{
+                        return Err("can't create directory inside of file");
+                    }
+                }
+            }
+        }
+        Ok(())

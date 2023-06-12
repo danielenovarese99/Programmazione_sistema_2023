@@ -1,0 +1,1 @@
+C:\Users\hp\Desktop\MAGISTRALE\ -\ SECONDO\ SEMESTRE\PROGRAMMAZIONE\ DI\ SISTEMA\PROGRAMMAZIONE\progr_sistema\rust\laboratorio_04\es_06_canali\target\debug\es_06_canali.exe: C:\Users\hp\Desktop\MAGISTRALE\ -\ SECONDO\ SEMESTRE\PROGRAMMAZIONE\ DI\ SISTEMA\PROGRAMMAZIONE\progr_sistema\rust\laboratorio_04\es_06_canali\src\main.rs
